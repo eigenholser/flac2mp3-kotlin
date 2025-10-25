@@ -58,7 +58,10 @@ object FlacDatabase {
 
     fun getByCddbAndTrack(cddb: String, track: String): FlacRow {
         val row = transaction {
-            val query = Flac.select { Flac.cddbid.eq(cddb) and Flac.track.eq(track) }.withDistinct()
+            val query =
+                Flac.selectAll()
+                    .where { Flac.cddbid.eq(cddb) and Flac.track.eq(track) }
+                    .withDistinct()
             query.map { it }.first()
         }
         return FlacRow(row[Flac.flacfile], row[Flac.cddbid], row[Flac.track], row[Flac.fsize], row[Flac.mtime])

@@ -21,12 +21,12 @@ class ExistingAlbumEvent : AbstractEvent(AlbumEvent.EXISTING_ALBUM_EVENT.toStrin
 
 object AlbumState {
     val state = ConversionState()
-    val newAlbum = State(AlbumStates.NEW_ALBUM.toString())
-    val existingAlbum = State(AlbumStates.EXISTING_ALBUM.toString())
+    val newAlbum = State(AlbumStates.NEW_ALBUM.name)
+    val existingAlbum = State(AlbumStates.EXISTING_ALBUM.name)
     val states = mutableSetOf(newAlbum, existingAlbum)
 
     val newAlbumTx = TransitionBuilder()
-        .name(AlbumStates.NEW_ALBUM.toString())
+        .name(AlbumStates.NEW_ALBUM.name)
         .sourceState(existingAlbum)
         .eventType(NewAlbumEvent::class.java)
         .eventHandler(SwitchAlbum())
@@ -34,7 +34,7 @@ object AlbumState {
         .build()
 
     val existingAlbumTx = TransitionBuilder()
-        .name(AlbumStates.EXISTING_ALBUM.toString())
+        .name(AlbumStates.EXISTING_ALBUM.name)
         .sourceState(newAlbum)
         .eventType(ExistingAlbumEvent::class.java)
         .eventHandler(SwitchAlbum())
