@@ -1,5 +1,6 @@
 package com.eigenholser.flac2mp3
 
+import org.jaudiotagger.audio.AudioFile
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldDataInvalidException
 import org.jaudiotagger.tag.FieldKey
@@ -11,8 +12,9 @@ import java.io.IOException
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.util.logging.Logger
+import kotlin.text.ifEmpty
 
-data class FlacTags(
+data class AudioTags(
     val artist: String,
     val album: String,
     val title: String,
@@ -22,95 +24,94 @@ data class FlacTags(
     val cddb: String
 )
 
-private val md = MessageDigest.getInstance("MD5")
-
-fun md5sum(input:String) =
-    BigInteger(1, md.digest(input.toByteArray()))
-        .toString(16)
-        .padStart(32, '0')
-
 object Tag {
     val logger: Logger = Logger.getLogger("Tags")
+    private val md = MessageDigest.getInstance("MD5")
 
-    fun readFlacTags(flacFile: String) =
-        AudioFileIO.read(File(flacFile))
-            .run {
-                FlacTags(
-                    artist = tag.getFirst(FieldKey.ARTIST),
-                    album = tag.getFirst(FieldKey.ALBUM),
-                    title = tag.getFirst(FieldKey.TITLE),
-                    year = tag.getFirst(FieldKey.YEAR).ifEmpty { "0000" },
-                    genre = tag.getFirst(FieldKey.GENRE).ifEmpty { "None" },
-                    track = tag.getFirst(FieldKey.TRACK),
-                    cddb =
-                        tag.getFirst("CDDB")
-                            .ifEmpty { tag.getFirst("MD5 SIGNATURE") }
-                            .ifEmpty { md5sum(tag.getFirst(FieldKey.TITLE)) }
-                )
-            }
+    fun md5sum(input: String) =
+        BigInteger(1, md.digest(input.toByteArray()))
+            .toString(16)
+            .padStart(32, '0')
 
-    fun writeMp3Tags(mp3File: String, mp3AlbumPath: String, flacTags: FlacTags) {
-        AudioFileIO.read(File(mp3File))
+    fun readAudioFile(file: String): AudioFile =
+        runCatching { AudioFileIO.read(File(file)) }
+            .onFailure { logger.info("Unable to read audio file: $file") }
+            .getOrThrow()
+
+    fun writeMp3Tags(mp3File: String, mp3AlbumPath: String, flacAudioFile: AudioFile) {
+        readAudioFile(mp3File)
             .also { it.tag = ID3v24Tag() }
             .let {
+                val flacTags = flacAudioFile.toAudioTags()
                 it.apply {
-                    addAlbumArtField(mp3AlbumPath, tag)
+                    tag.addAlbumArtField(mp3AlbumPath)
                     tag.setField(FieldKey.ARTIST, flacTags.artist)
                     tag.setField(FieldKey.ALBUM, flacTags.album)
                     tag.setField(FieldKey.TITLE, flacTags.title)
                     tag.setField(FieldKey.YEAR, flacTags.year)
                     tag.setField(FieldKey.GENRE, flacTags.genre)
                     tag.setField(FieldKey.TRACK, flacTags.track)
-                    logger.info("Fields finally in mp3 $mp3AlbumPath: ${tag.fieldCount}")
-                    // TODO: Something broken about this. How does it work?
-//                    tag.createField(FieldKey.valueOf("CDDB"), flacTags.cddb)
+                    tag.setField(FieldKey.CATALOG_NO, flacTags.cddb)
+                    logger.info("Final fields in mp3 audio file: $mp3AlbumPath: ${tag.fieldCount}")
                 }
             }
-            .also {
-                runCatching { it.commit() }
+            .apply {
+                runCatching { commit() }
                     .onSuccess { logger.info("Committed tags: $mp3File") }
-                    .onFailure { logger.warning("Unable to commit. Caused by: {$it.message}") }
+                    .onFailure { e -> logger.warning("Unable to commit tags. Caused by: {$e.message}") }
             }
     }
 
-    fun albumArtTagExists(mp3File: String): Boolean {
-        val f = AudioFileIO.read(File(mp3File))
-        val artwork = f.tag?.firstArtwork
-        return artwork != null
-    }
-
-    private fun addAlbumArtField(mp3AlbumPath: String, tag: Tag) {
-        logger.info("Fields initially in mp3 $mp3AlbumPath: ${tag.fieldCount}")
-        runCatching {
-            val albumArt = StandardArtwork.createArtworkFromFile(File("$mp3AlbumPath/${Config.coverArtFile}"))
-            tag.addField(albumArt)
-            logger.info("Fields finally in mp3 $mp3AlbumPath: ${tag.fieldCount}")
+    fun AudioFile.toAudioTags() =
+        tag.run {
+            AudioTags(
+                artist = getFirst(FieldKey.ARTIST),
+                album = getFirst(FieldKey.ALBUM),
+                title = getFirst(FieldKey.TITLE),
+                year = getFirst(FieldKey.YEAR).ifEmpty { "0000" },
+                genre = getFirst(FieldKey.GENRE).ifEmpty { "None" },
+                track = getFirst(FieldKey.TRACK),
+                cddb =
+                    getFirst("CDDB")
+                        .ifEmpty { getFirst("MD5 SIGNATURE") }
+                        .ifEmpty { md5sum(getFirst(FieldKey.TITLE)) }
+            )
         }
+
+    fun AudioFile.albumArtTagExists() = tag?.firstArtwork != null
+
+    private fun Tag.addAlbumArtField(mp3AlbumPath: String) {
+        logger.info("Initial fields in mp3 $mp3AlbumPath: ${fieldCount}")
+        runCatching {
+            StandardArtwork.createArtworkFromFile(File("$mp3AlbumPath/${Config.coverArtFile}"))
+                .also { addField(it) }
+        }
+            .onSuccess { logger.info("Final fields in mp3 $mp3AlbumPath: ${fieldCount}") }
             .onFailure {
                 when (it) {
                     is FieldDataInvalidException ->
-                        logger.warning("Could not tag file with album art: $mp3AlbumPath/${Config.coverArtFile}")
+                        logger.warning("Unable to tag file with album art: $mp3AlbumPath/${Config.coverArtFile}")
 
                     is IOException ->
-                        logger.warning("Could not find album art for tagging: $mp3AlbumPath/${Config.coverArtFile}")
+                        logger.warning("Unable to find album art for tagging: $mp3AlbumPath/${Config.coverArtFile}")
                 }
             }
     }
 
-    private fun deleteAlbumArtField(tag: Tag) {
-        logger.info("Artwork list: ${tag.artworkList}")
-        runCatching { tag.deleteArtworkField() }
+    private fun Tag.deleteAlbumArtField() {
+        logger.info("Artwork list: $artworkList")
+        runCatching { deleteArtworkField() }
             .onFailure { logger.info("Album art tag not present.") }
     }
 
     fun updateAlbumArtField(mp3File: String, mp3Album: String) {
-        AudioFileIO.read(File(mp3File))
-            .let { f ->
-                if (albumArtTagExists(mp3File)) {
-                    deleteAlbumArtField(f.tag)
+        readAudioFile(mp3File)
+            .apply {
+                if (albumArtTagExists()) {
+                    tag.deleteAlbumArtField()
                 }
-                addAlbumArtField(mp3Album, f.tag)
-                f.commit()
+                tag.addAlbumArtField(mp3Album)
+                commit()
             }
     }
 }

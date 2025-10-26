@@ -4,7 +4,7 @@ import com.eigenholser.flac2mp3.*
 import org.jeasy.rules.api.Facts
 import kotlin.io.path.ExperimentalPathApi
 
-class ArtNewMp3: AlbumArtRule {
+class ArtNewMp3 : AlbumArtRule {
     override val rulePriority = 1
 
     override fun getName() = AlbumArtRules.NEW_MP3_ART_EXISTS.toString()
@@ -12,8 +12,7 @@ class ArtNewMp3: AlbumArtRule {
     override fun getDescription() = "New MP3 file and album art PNG exists in FLAC album."
 
     @OptIn(ExperimentalPathApi::class)
-    override fun evaluate(facts: Facts): Boolean {
-        val trackData = facts.get<TrackData>(AlbumArtFacts.TRACK_DATA.name)
-        return !mp3FileExists(trackData) && albumArtPNGExists(trackData)
-    }
+    override fun evaluate(facts: Facts) =
+        facts.get<TrackData>(AlbumArtFacts.TRACK_DATA.name)
+            .run { !mp3FileExists() && albumArtPNGExists() }
 }

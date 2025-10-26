@@ -9,7 +9,7 @@ import org.jeasy.rules.api.Facts
 import org.jeasy.rules.api.Rule
 import org.jeasy.states.api.FiniteStateMachine
 
-interface AlbumArtRule: Rule {
+interface AlbumArtRule : Rule {
     val rulePriority: Int
 
     override fun execute(facts: Facts) {
