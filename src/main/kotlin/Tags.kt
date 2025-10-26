@@ -3,7 +3,6 @@ package com.eigenholser.flac2mp3
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldDataInvalidException
 import org.jaudiotagger.tag.FieldKey
-import org.jaudiotagger.tag.KeyNotFoundException
 import org.jaudiotagger.tag.Tag
 import org.jaudiotagger.tag.id3.ID3v24Tag
 import org.jaudiotagger.tag.images.StandardArtwork
@@ -74,8 +73,8 @@ object Tag {
             }
     }
 
-    fun albumArtTagExists(mp3File: File): Boolean {
-        val f = AudioFileIO.read(mp3File)
+    fun albumArtTagExists(mp3File: String): Boolean {
+        val f = AudioFileIO.read(File(mp3File))
         val artwork = f.tag?.firstArtwork
         return artwork != null
     }
@@ -104,13 +103,13 @@ object Tag {
             .onFailure { logger.info("Album art tag not present.") }
     }
 
-    fun updateAlbumArtField(mp3File: String, mp3AlbumPath: String) {
+    fun updateAlbumArtField(mp3File: String, mp3Album: String) {
         AudioFileIO.read(File(mp3File))
             .let { f ->
                 if (albumArtTagExists(File(mp3File))) {
                     deleteAlbumArtField(f.tag)
                 }
-                addAlbumArtField(mp3AlbumPath, f.tag)
+                addAlbumArtField(mp3Album, f.tag)
                 f.commit()
             }
     }

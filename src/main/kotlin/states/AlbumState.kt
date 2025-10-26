@@ -4,7 +4,6 @@ import org.jeasy.states.api.AbstractEvent
 import org.jeasy.states.api.State
 import org.jeasy.states.core.FiniteStateMachineBuilder
 import org.jeasy.states.core.TransitionBuilder
-import java.nio.file.Path
 
 enum class AlbumEvent {
     NEW_ALBUM_EVENT, EXISTING_ALBUM_EVENT
@@ -15,9 +14,9 @@ enum class AlbumStates {
     EXISTING_ALBUM
 }
 
-data class ConversionState(var nextAlbum: String = "", var prevMp3AlbumPath: Path? = null)
+data class ConversionState(var nextAlbum: String = "", var prevMp3AlbumPath: String = "")
 class NewAlbumEvent : AbstractEvent(AlbumEvent.NEW_ALBUM_EVENT.toString())
-class ExistingAlbumEvent : AbstractEvent(AlbumEvent.EXISTING_ALBUM_EVENT.toString())
+class ExistingAlbumEvent : AbstractEvent(AlbumEvent.EXISTING_ALBUM_EVENT.name)
 
 object AlbumState {
     val state = ConversionState()

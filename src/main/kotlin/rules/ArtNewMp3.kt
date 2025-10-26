@@ -13,7 +13,7 @@ class ArtNewMp3: AlbumArtRule {
 
     @OptIn(ExperimentalPathApi::class)
     override fun evaluate(facts: Facts): Boolean {
-        val trackData = facts.get<TrackData>(AlbumArtFacts.TRACK_DATA.toString())
+        val trackData = facts.get<TrackData>(AlbumArtFacts.TRACK_DATA.name)
         return !mp3FileExists(trackData) && albumArtPNGExists(trackData)
     }
 }

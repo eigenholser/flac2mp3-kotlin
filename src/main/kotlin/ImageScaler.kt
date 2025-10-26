@@ -2,11 +2,6 @@ package com.eigenholser.flac2mp3
 
 import ij.IJ
 import ij.process.ImageProcessor
-import org.jetbrains.exposed.sql.exists
-import java.io.File
-import java.lang.NullPointerException
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.util.logging.Logger
 import kotlin.math.nextUp
 
@@ -17,7 +12,7 @@ enum class DestType {
 object ImageScaler {
     val logger: Logger = Logger.getLogger("ImageScaler")
     val coverFilename = Config.coverArtFile
-    val thumbFilename = Config.thumbArtFile
+//    val thumbFilename = Config.thumbArtFile
     val destFormat = "jpg"
 
     private fun computeScaleFactor(xAxis: Int, srcSize: Int) = xAxis / srcSize.toDouble()
