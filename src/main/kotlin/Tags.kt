@@ -106,7 +106,7 @@ object Tag {
     fun updateAlbumArtField(mp3File: String, mp3Album: String) {
         AudioFileIO.read(File(mp3File))
             .let { f ->
-                if (albumArtTagExists(File(mp3File))) {
+                if (albumArtTagExists(mp3File)) {
                     deleteAlbumArtField(f.tag)
                 }
                 addAlbumArtField(mp3Album, f.tag)

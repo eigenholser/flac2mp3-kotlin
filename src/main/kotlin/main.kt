@@ -12,7 +12,6 @@ import org.jeasy.rules.api.RulesEngineParameters
 import org.jeasy.rules.core.DefaultRulesEngine
 import java.io.File
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.attribute.FileTime
 import java.util.logging.Logger
@@ -160,5 +159,5 @@ fun isAlbumArtUpdated(trackData: TrackData) =
 @ExperimentalPathApi
 fun isThisTrackStale(trackData: TrackData) = !isTrackCurrent(trackData) || isAlbumArtUpdated(trackData)
 
-fun deleteMp3CoverArt(mp3AlbumPathAbsolute: Path?) =
-    File("${mp3AlbumPathAbsolute.toString()}/${Config.coverArtFile}").delete()
+fun deleteMp3CoverArt(mp3AlbumPathAbsolute: String) =
+    File("${mp3AlbumPathAbsolute}/${Config.coverArtFile}").delete()
