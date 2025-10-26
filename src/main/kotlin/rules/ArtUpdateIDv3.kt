@@ -1,6 +1,6 @@
 package com.eigenholser.flac2mp3.rules
 
-import com.eigenholser.flac2mp3.*
+import com.eigenholser.flac2mp3.isAlbumArtUpdated
 import org.jeasy.rules.api.Facts
 import kotlin.io.path.ExperimentalPathApi
 
@@ -13,5 +13,5 @@ class ArtUpdateIDv3: AlbumArtRule {
         "Existing MP3 file has album art tag and album art PNG updated in FLAC album."
 
     @ExperimentalPathApi
-    override fun evaluate(facts: Facts) = isAlbumArtUpdated(facts.get<TrackData>(AlbumArtFacts.TRACK_DATA.name))
+    override fun evaluate(facts: Facts) = isAlbumArtUpdated(facts.get(AlbumArtFacts.TRACK_DATA.name))
 }

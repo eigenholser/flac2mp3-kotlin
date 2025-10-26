@@ -1,6 +1,15 @@
 package com.eigenholser.flac2mp3
 
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.addLogger
+import org.jetbrains.exposed.sql.StdOutSqlLogger
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
@@ -31,8 +40,11 @@ object Flac : Table() {
 }
 
 data class FlacRow(
-    val flacfile: String, val cddbId: String, val track: String,
-    val fsize: Long, val mtime: Long
+    val flacfile: String,
+    val cddbId: String,
+    val track: String,
+    val fsize: Long,
+    val mtime: Long
 )
 
 object FlacDatabase {
