@@ -15,15 +15,12 @@ enum class DestType {
 }
 
 object ImageScaler {
-    val logger = Logger.getLogger("ImageScaler")
-
+    val logger: Logger = Logger.getLogger("ImageScaler")
     val coverFilename = Config.coverArtFile
     val thumbFilename = Config.thumbArtFile
     val destFormat = "jpg"
 
-    private fun computeScaleFactor(xAxis: Int, srcSize: Int): Double {
-        return (xAxis/srcSize.toDouble())
-    }
+    private fun computeScaleFactor(xAxis: Int, srcSize: Int) = xAxis / srcSize.toDouble()
 
     private fun makeThumb(ip: ImageProcessor): ImageProcessor {
         val scaleFactor = computeScaleFactor(Config.thumbnailResolution, ip.width)
@@ -32,11 +29,11 @@ object ImageScaler {
 
     private fun makeCover(ip: ImageProcessor): ImageProcessor {
         val scaleFactor = computeScaleFactor(Config.coverResolution, ip.width)
-        return ip.resize(Config.coverResolution, ((scaleFactor*ip.height).nextUp().toInt()))
+        return ip.resize(Config.coverResolution, ((scaleFactor * ip.height).nextUp().toInt()))
     }
 
     fun scaleImage(src: String, dest: String) {
-        try {
+        runCatching {
             val imp = IJ.openImage("$src/${Config.albumArtFile}")
             val ip = imp.processor
 
@@ -46,14 +43,13 @@ object ImageScaler {
 
             imp.processor = makeCover(ip)
             IJ.saveAs(imp, destFormat, "$dest/$coverFilename")
-        } catch (e: NullPointerException) {
-            logger.warning("Album art not found: $src/${Config.albumArtFile}")
         }
+            .onFailure { logger.warning("Album art not found: $src/${Config.albumArtFile}") }
 
     }
 
     fun scaleImage(src: String, dest: String, destType: DestType) {
-        try {
+        runCatching {
             val imp = IJ.openImage("$src/${Config.albumArtFile}")
             val ip = imp.processor
 
@@ -64,8 +60,7 @@ object ImageScaler {
                 imp.processor = makeCover(ip)
                 IJ.saveAs(imp, destFormat, "$dest/$coverFilename")
             }
-        } catch (e: NullPointerException) {
-            logger.warning("Album art not found: $src/${Config.albumArtFile}")
         }
+            .onFailure { logger.warning("Album art not found: $src/${Config.albumArtFile}") }
     }
 }

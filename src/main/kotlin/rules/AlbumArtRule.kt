@@ -26,6 +26,7 @@ interface AlbumArtRule: Rule {
                     trackData.mp3AlbumPathAbsolute.toString()
                 )
             }
+
             AlbumStates.EXISTING_ALBUM -> {
                 Tag.updateAlbumArtField(
                     trackData.mp3FileAbsolute.toString(),
@@ -35,15 +36,12 @@ interface AlbumArtRule: Rule {
         }
     }
 
-    override fun getPriority(): Int {
-        return rulePriority
-    }
+    override fun getPriority() = rulePriority
 
-    override fun compareTo(other: Rule): Int {
-        return when {
+    override fun compareTo(other: Rule) =
+        when {
             this.priority > other.priority -> 1
             this.priority < other.priority -> -1
             else -> this.name.compareTo(other.name)
         }
-    }
 }

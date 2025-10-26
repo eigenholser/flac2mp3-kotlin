@@ -7,13 +7,9 @@ import kotlin.io.path.ExperimentalPathApi
 class ArtNewMp3: AlbumArtRule {
     override val rulePriority = 1
 
-    override fun getName(): String {
-        return AlbumArtRules.NEW_MP3_ART_EXISTS.toString()
-    }
+    override fun getName() = AlbumArtRules.NEW_MP3_ART_EXISTS.toString()
 
-    override fun getDescription(): String {
-        return "New MP3 file and album art PNG exists in FLAC album."
-    }
+    override fun getDescription() = "New MP3 file and album art PNG exists in FLAC album."
 
     @OptIn(ExperimentalPathApi::class)
     override fun evaluate(facts: Facts): Boolean {

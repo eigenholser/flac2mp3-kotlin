@@ -23,11 +23,11 @@ object Flac : Table() {
     val fsize = long("fsize")
     val mtime = long("mtime")
 
-    override val primaryKey = PrimaryKey(id, name = "PK_Flac_ID")
-
     init {
         uniqueIndex("uniqueConstraint_cddbid_track", cddbid, track)
     }
+
+    override val primaryKey = PrimaryKey(id, name = "PK_Flac_ID")
 }
 
 data class FlacRow(
