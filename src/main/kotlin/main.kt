@@ -14,6 +14,7 @@ import org.jeasy.rules.api.RulesEngineParameters
 import org.jeasy.rules.core.DefaultRulesEngine
 import java.io.File
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.attribute.FileTime
 import java.util.logging.Logger
@@ -51,12 +52,12 @@ fun main(args: Array<String>) {
 
                 state.nextAlbum = track.currentAlbum
                 state.prevMp3AlbumPath = track.mp3Album
-                Files.createDirectories(Paths.get(track.mp3Album))
+                Paths.get(track.mp3Album).createDirectories()
 
-                fireAlbumArtRules(track)
+                track.fireAlbumArtRules()
                     .also { albumStateMachine.fire(ExistingAlbumEvent()) }
             } else {
-                fireAlbumArtRules(track)
+                track.fireAlbumArtRules()
             }
 
             LameFlac2Mp3.flac2mp3(flacSrc = track.flacFile, mp3Dest = track.mp3File)
@@ -71,62 +72,44 @@ fun main(args: Array<String>) {
     deleteMp3CoverArt(state.prevMp3AlbumPath)
 }
 
-fun fireAlbumArtRules(track: TrackData) {
+fun TrackData.fireAlbumArtRules() {
     val parameters =
         RulesEngineParameters().skipOnFirstAppliedRule(true)
     val albumArtFacts =
         Facts()
-            .apply {
-                add(Fact(AlbumArtFacts.TRACK_DATA.name, track))
-                add(Fact(AlbumArtFacts.ALBUM_STATE.name, albumStateMachine))
+            .also {
+                it.add(Fact(AlbumArtFacts.TRACK_DATA.name, this))
+                it.add(Fact(AlbumArtFacts.ALBUM_STATE.name, albumStateMachine))
             }
 
     DefaultRulesEngine(parameters)
         .fire(Rules(ArtNewMp3(), ArtUpdateIDv3()), albumArtFacts)
 }
 
-data class TrackData(
-    val flacFile: String,
-    val flacAlbum: String,
-    val currentAlbum: String,
-    val mp3Album: String,
-    val mp3File: String,
-    val fsize: Long,
-    val mtime: Long
-)
-
 fun File.toTrackData(): TrackData {
     val mp3Extension = "mp3"
     val extensionSeparator = "."
     val dirSeparator = "/"
-    val fsize = Files.getAttribute(toPath(), "size") as Long
-    val mtime = Files.getAttribute(toPath(), "lastModifiedTime") as FileTime
-    val flacTrackname = name
-    val trackName = nameWithoutExtension
-    val mp3TrackName = trackName + extensionSeparator + mp3Extension
-    val flacAlbum = absolutePath.removeSuffix(dirSeparator + flacTrackname)
-    val currentAlbum = flacAlbum
-        .removePrefix(Config.flacRoot + dirSeparator)
-        .removeSuffix(dirSeparator + flacTrackname)
+    val currentAlbum =
+        absolutePath
+            .removePrefix(Config.flacRoot + dirSeparator)
+            .removeSuffix(dirSeparator + name)
     val mp3Album = Config.mp3Root + dirSeparator + currentAlbum
-    val mp3File = mp3Album + dirSeparator + mp3TrackName
 
     return TrackData(
         flacFile = absolutePath,
-        flacAlbum = flacAlbum,
+        flacAlbum = absolutePath.removeSuffix(dirSeparator + name),
         currentAlbum = currentAlbum,
         mp3Album = mp3Album,
-        mp3File = mp3File,
-        fsize = fsize,
-        mtime = mtime.toMillis()
+        mp3File = mp3Album + dirSeparator + nameWithoutExtension + extensionSeparator + mp3Extension,
+        fsize = Files.getAttribute(toPath(), "size") as Long,
+        mtime = (Files.getAttribute(toPath(), "lastModifiedTime") as FileTime).toMillis()
     )
 }
 
 fun TrackData.isCurrent() =
     if (mp3FileExists()) {
-        val flacMtime = Files.getAttribute(Paths.get(flacFile), "lastModifiedTime") as FileTime
-        val mp3Mtime = Files.getAttribute(Paths.get(mp3File), "lastModifiedTime") as FileTime
-        flacMtime.toMillis() < mp3Mtime.toMillis()
+        Paths.get(flacFile).mtime() < Paths.get(mp3File).mtime()
     } else {
         false
     }
@@ -137,18 +120,34 @@ fun TrackData.albumArtPNGExists() = Paths.get(flacAlbum).resolve(Config.albumArt
 
 fun TrackData.isAlbumArtUpdated() =
     if (mp3FileExists() && albumArtPNGExists()) {
-        val albumArtMtime = Files.getAttribute(
-            Paths.get(flacAlbum).resolve(Config.albumArtFile), "lastModifiedTime"
-        ) as FileTime
-        val mp3Mtime = Files.getAttribute(Paths.get(mp3File), "lastModifiedTime") as FileTime
+        val albumArtMtime = Paths.get(flacAlbum).resolve(Config.albumArtFile).mtime()
+        val mp3Mtime = Paths.get(mp3File).mtime()
 
         readAudioFile(mp3File)
-            .run { (albumArtTagExists() && albumArtMtime.toMillis() > mp3Mtime.toMillis()) || !albumArtTagExists() }
+            .run { (albumArtTagExists() && albumArtMtime > mp3Mtime) || !albumArtTagExists() }
     } else {
         false
     }
 
 fun TrackData.isStale() = !isCurrent() || isAlbumArtUpdated()
 
+fun Path.mtime() =
+    (Files.getAttribute(this, "lastModifiedTime") as FileTime).toMillis()
+
+fun Path.createDirectories(): Path =
+    runCatching { Files.createDirectories(this) }
+        .onFailure { logger.info("Unable to create directories: $this") }
+        .getOrThrow()
+
 fun deleteMp3CoverArt(mp3AlbumPathAbsolute: String) =
     File("${mp3AlbumPathAbsolute}/${Config.coverArtFile}").delete()
+
+data class TrackData(
+    val flacFile: String,
+    val flacAlbum: String,
+    val currentAlbum: String,
+    val mp3Album: String,
+    val mp3File: String,
+    val fsize: Long,
+    val mtime: Long
+)

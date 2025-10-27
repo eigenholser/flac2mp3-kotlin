@@ -5,6 +5,7 @@ import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldDataInvalidException
 import org.jaudiotagger.tag.FieldKey
 import org.jaudiotagger.tag.Tag
+import org.jaudiotagger.tag.flac.FlacTag
 import org.jaudiotagger.tag.id3.ID3v24Tag
 import org.jaudiotagger.tag.images.StandardArtwork
 import java.io.File
@@ -25,7 +26,7 @@ data class AudioTags(
 )
 
 object Tag {
-    val logger: Logger = Logger.getLogger("Tags")
+    private val logger: Logger = Logger.getLogger("Tags")
     private val md = MessageDigest.getInstance("MD5")
 
     fun md5sum(input: String) =
@@ -39,6 +40,7 @@ object Tag {
             .getOrThrow()
 
     fun writeMp3Tags(mp3File: String, mp3AlbumPath: String, flacAudioFile: AudioFile) {
+        assert(flacAudioFile.tag is FlacTag)
         readAudioFile(mp3File)
             .also { it.tag = ID3v24Tag() }
             .let {
