@@ -83,7 +83,9 @@ object Tag {
     private fun Tag.addAlbumArtField(mp3AlbumPath: String) {
         logger.info("Initial fields in mp3 $mp3AlbumPath: ${fieldCount}")
         runCatching {
-            StandardArtwork.createArtworkFromFile(File("$mp3AlbumPath/${Config.coverArtFile}"))
+            StandardArtwork
+                .createArtworkFromFile(File("$mp3AlbumPath/${Config.coverArtFile}"))
+                .also { it.description = "Cover Art" }
                 .also { addField(it) }
         }
             .onSuccess { logger.info("Final fields in mp3 $mp3AlbumPath: ${fieldCount}") }
@@ -93,14 +95,14 @@ object Tag {
                         logger.warning("Unable to tag file with album art: $mp3AlbumPath/${Config.coverArtFile}")
 
                     is IOException ->
-                        logger.warning("Unable to find album art for tagging: $mp3AlbumPath/${Config.coverArtFile}")
+                        logger.warning("Unable to find album art: $mp3AlbumPath/${Config.coverArtFile}")
                 }
             }
     }
 
     private fun Tag.deleteAlbumArtField() {
-        logger.info("Artwork list: $artworkList")
         runCatching { deleteArtworkField() }
+            .onSuccess { logger.info("Deleted existing artwork.") }
             .onFailure { logger.info("Album art tag not present.") }
     }
 
