@@ -1,0 +1,18 @@
+<configuration>
+    <handlers>
+        <handler class="java.util.logging.ConsoleHandler">
+            <level>INFO</level>
+            <formatter class="java.util.logging.SimpleFormatter"/>
+        </handler>
+        <handler class="java.util.logging.FileHandler">
+            <level>WARNING</level>
+            <property name="java.util.logging.FileHandler.pattern">%h/java%u.log</property>
+            <property name="java.util.logging.FileHandler.limit">50000</property>
+            <property name="java.util.logging.FileHandler.count">1</property>
+            <formatter class="java.util.logging.SimpleFormatter"/>
+        </handler>
+    </handlers>
+    <loggers>
+        <logger name="com.eigenholser" level="fine"/>
+    </loggers>
+</configuration>

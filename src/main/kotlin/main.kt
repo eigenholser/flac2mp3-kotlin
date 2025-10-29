@@ -13,14 +13,18 @@ import org.jeasy.rules.api.Rules
 import org.jeasy.rules.api.RulesEngineParameters
 import org.jeasy.rules.core.DefaultRulesEngine
 import java.io.File
+import java.io.FileInputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.attribute.FileTime
 import java.util.logging.Logger
+import java.util.logging.LogManager
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.exists
 
+val logManager = LogManager.getLogManager()
+    .apply { readConfiguration(FileInputStream("src/main/resources/logging.xml")) }
 val logger: Logger = Logger.getLogger("main")
 
 @ExperimentalPathApi
@@ -28,6 +32,7 @@ fun main(args: Array<String>) {
     /* Leaving the DB stuff for now. May return to it later. */
     // val db = DbSettings.db
     // FlacDatabase.createDatabase()
+    logger.info("Scanning FLAC sources")
 
     val rulesEngine = DefaultRulesEngine()
 
@@ -59,13 +64,6 @@ fun main(args: Array<String>) {
             } else {
                 track.fireAlbumArtRules()
             }
-
-            LameFlac2Mp3.flac2mp3(flacSrc = track.flacFile, mp3Dest = track.mp3File)
-            Tag.writeMp3Tags(
-                mp3File = track.mp3File,
-                mp3AlbumPath = track.mp3Album,
-                flacAudioFile = readAudioFile(track.flacFile)
-            )
         }
 
     // Delete the last album art
@@ -103,7 +101,7 @@ fun File.toTrackData(): TrackData {
         mp3Album = mp3Album,
         mp3File = mp3Album + dirSeparator + nameWithoutExtension + extensionSeparator + mp3Extension,
         fsize = Files.getAttribute(toPath(), "size") as Long,
-        mtime = (Files.getAttribute(toPath(), "lastModifiedTime") as FileTime).toMillis()
+        mtime = toPath().mtime()
     )
 }
 

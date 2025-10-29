@@ -1,41 +1,18 @@
 package com.eigenholser.flac2mp3.rules
 
-import com.eigenholser.flac2mp3.DestType
-import com.eigenholser.flac2mp3.ImageScaler
-import com.eigenholser.flac2mp3.Tag
 import com.eigenholser.flac2mp3.TrackData
 import com.eigenholser.flac2mp3.states.AlbumStates
 import org.jeasy.rules.api.Facts
 import org.jeasy.rules.api.Rule
 import org.jeasy.states.api.FiniteStateMachine
 
-interface AlbumArtRule : Rule {
-    val rulePriority: Int
+abstract class AlbumArtRule : Rule {
+    abstract val rulePriority: Int
 
-    override fun execute(facts: Facts) {
-        val trackData = facts.get<TrackData>(AlbumArtFacts.TRACK_DATA.name)
-        // TODO: This is a side-effect and should not be performed here.
-        when (AlbumStates.valueOf(facts.get<FiniteStateMachine>(AlbumArtFacts.ALBUM_STATE.name).currentState.name)) {
-            AlbumStates.NEW_ALBUM -> {
-                ImageScaler.scaleImage(
-                    trackData.flacAlbum,
-                    trackData.mp3Album,
-                    DestType.COVER
-                )
-                Tag.updateAlbumArtField(
-                    trackData.mp3File,
-                    trackData.mp3Album
-                )
-            }
+    fun getAlbumState(facts: Facts) =
+        AlbumStates.valueOf(facts.get<FiniteStateMachine>(AlbumArtFacts.ALBUM_STATE.name).currentState.name)
 
-            AlbumStates.EXISTING_ALBUM -> {
-                Tag.updateAlbumArtField(
-                    trackData.mp3File,
-                    trackData.mp3Album
-                )
-            }
-        }
-    }
+    fun getTrackData(facts: Facts): TrackData = facts.get(AlbumArtFacts.TRACK_DATA.name)
 
     override fun getPriority() = rulePriority
 

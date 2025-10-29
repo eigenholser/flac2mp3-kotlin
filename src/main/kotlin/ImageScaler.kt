@@ -27,21 +27,21 @@ object ImageScaler {
         return ip.resize(Config.coverResolution, ((scaleFactor * ip.height).nextUp().toInt()))
     }
 
-    fun scaleImage(src: String, dest: String) {
-        runCatching {
-            val imp = IJ.openImage("$src/${Config.albumArtFile}")
-            val ip = imp.processor
-
-            // Disable thumbnail for now. Maybe remove it entirely.
-//            imp.processor = makeThumb(ip)
-//            IJ.saveAs(imp, destFormat, "$dest/$thumbFilename")
-
-            imp.processor = makeCover(ip)
-            IJ.saveAs(imp, destFormat, "$dest/$coverFilename")
-        }
-            .onFailure { logger.warning("Album art not found: $src/${Config.albumArtFile}") }
-
-    }
+//    fun scaleImage(src: String, dest: String) {
+//        runCatching {
+//            val imp = IJ.openImage("$src/${Config.albumArtFile}")
+//            val ip = imp.processor
+//
+//            // Disable thumbnail for now. Maybe remove it entirely.
+////            imp.processor = makeThumb(ip)
+////            IJ.saveAs(imp, destFormat, "$dest/$thumbFilename")
+//
+//            imp.processor = makeCover(ip)
+//            IJ.saveAs(imp, destFormat, "$dest/$coverFilename")
+//        }
+//            .onFailure { logger.warning("Album art not found: $src/${Config.albumArtFile}") }
+//
+//    }
 
     fun scaleImage(src: String, dest: String, destType: DestType) {
         runCatching {
@@ -56,6 +56,7 @@ object ImageScaler {
                 IJ.saveAs(imp, destFormat, "$dest/$coverFilename")
             }
         }
+            .onSuccess { logger.info("Converted album art type $destType") }
             .onFailure { logger.warning("Album art not found: $src/${Config.albumArtFile}") }
     }
 }

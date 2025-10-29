@@ -26,7 +26,7 @@ data class AudioTags(
 )
 
 object Tag {
-    private val logger: Logger = Logger.getLogger("Tags")
+    private val logger: Logger = Logger.getLogger("Tag")
     private val md = MessageDigest.getInstance("MD5")
 
     fun md5sum(input: String) =
@@ -54,7 +54,6 @@ object Tag {
                     tag.setField(FieldKey.GENRE, flacTags.genre)
                     tag.setField(FieldKey.TRACK, flacTags.track)
                     tag.setField(FieldKey.CATALOG_NO, flacTags.cddb)
-                    logger.info("Final fields in mp3 audio file: $mp3AlbumPath: ${tag.fieldCount}")
                 }
             }
             .apply {
@@ -83,14 +82,13 @@ object Tag {
     fun AudioFile.albumArtTagExists() = tag?.firstArtwork != null
 
     private fun Tag.addAlbumArtField(mp3AlbumPath: String) {
-        logger.info("Initial fields in mp3 $mp3AlbumPath: ${fieldCount}")
         runCatching {
             StandardArtwork
                 .createArtworkFromFile(File("$mp3AlbumPath/${Config.coverArtFile}"))
                 .also { it.description = "Cover Art" }
                 .also { addField(it) }
         }
-            .onSuccess { logger.info("Final fields in mp3 $mp3AlbumPath: ${fieldCount}") }
+            .onSuccess { logger.info("Added album art to track: $mp3AlbumPath/${Config.coverArtFile}") }
             .onFailure {
                 when (it) {
                     is FieldDataInvalidException ->
