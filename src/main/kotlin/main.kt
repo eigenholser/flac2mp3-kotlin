@@ -49,24 +49,16 @@ fun main(args: Array<String>) {
                     add(Fact(AlbumFact.ALBUM_STATE.name, albumStateMachine))
                     add(Fact(AlbumFact.CURRENT_ALBUM.name, track.currentAlbum))
                     add(Fact(AlbumFact.NEXT_ALBUM.name, state.nextAlbum))
+                    add(Fact(AlbumArtFacts.TRACK_DATA.name, track))
                 }
                 .also { rulesEngine.fire(Rules(NewAlbum(albumStateMachine)), it) }
 
-            if (AlbumStates.valueOf(albumStateMachine.currentState.name) == AlbumStates.NEW_ALBUM) {
-                deleteMp3CoverArt(state.prevMp3AlbumPath)
-
-                state.nextAlbum = track.currentAlbum
-                state.prevMp3AlbumPath = track.mp3Album
-                Paths.get(track.mp3Album).createDirectories()
-
+//            if (AlbumStates.valueOf(albumStateMachine.currentState.name) == AlbumStates.EXISTING_ALBUM) {
                 track.fireAlbumArtRules()
-                    .also { albumStateMachine.fire(ExistingAlbumEvent()) }
-            } else {
-                track.fireAlbumArtRules()
-            }
+//            }
         }
 
-    // Delete the last album art
+    // Delete the previous album art
     deleteMp3CoverArt(state.prevMp3AlbumPath)
 }
 

@@ -51,12 +51,15 @@ object ImageScaler {
             if (destType == DestType.THUMB) {
                 imp.processor = makeThumb(ip)
                 IJ.saveAs(imp, destFormat, "$dest/$coverFilename")
-            } else if (destType == DestType.COVER) {
+            } else {
                 imp.processor = makeCover(ip)
                 IJ.saveAs(imp, destFormat, "$dest/$coverFilename")
             }
+                .also { imp.close() }
         }
-            .onSuccess { logger.info("Converted album art type $destType") }
+            .onSuccess {
+                logger.info("Converted album art type $destType")
+            }
             .onFailure { logger.warning("Album art not found: $src/${Config.albumArtFile}") }
     }
 }

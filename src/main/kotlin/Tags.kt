@@ -109,11 +109,14 @@ object Tag {
     fun updateAlbumArtField(mp3File: String, mp3Album: String) {
         readAudioFile(mp3File)
             .apply {
-                if (albumArtTagExists()) {
-                    tag.deleteAlbumArtField()
-                }
-                tag.addAlbumArtField(mp3Album)
-                commit()
+                tag
+                    ?.also {
+                        if (albumArtTagExists()) {
+                            tag.deleteAlbumArtField()
+                        }
+                        tag.addAlbumArtField(mp3Album)
+                        commit()
+                    }
             }
     }
 }
