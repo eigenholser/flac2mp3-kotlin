@@ -43,7 +43,7 @@ class NewAlbumRule(private val albumStateMachine: FiniteStateMachine) : Rule {
         albumStateMachine.fire(NewAlbumEvent())
     }
 
-    override fun compareTo(other: Rule): Int = 0
+    override fun compareTo(other: Rule) = 0
 
     override fun evaluate(facts: Facts): Boolean {
         val albumState = facts.get<FiniteStateMachine>(AlbumFact.ALBUM_STATE.name)

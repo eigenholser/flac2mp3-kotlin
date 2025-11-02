@@ -18,8 +18,8 @@ abstract class AlbumArtRule : Rule {
 
     override fun compareTo(other: Rule) =
         when {
-            this.priority > other.priority -> 1
-            this.priority < other.priority -> -1
-            else -> this.name.compareTo(other.name)
+            priority > other.priority -> 1
+            priority < other.priority -> -1
+            else -> name.compareTo(other.name)
         }
 }

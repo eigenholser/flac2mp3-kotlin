@@ -18,12 +18,10 @@ import java.nio.file.Paths
 import java.nio.file.attribute.FileTime
 import java.util.logging.LogManager
 import java.util.logging.Logger
-import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.exists
 
 val logger: Logger = Logger.getLogger("main")
 
-@ExperimentalPathApi
 fun main(args: Array<String>) {
     LogManager.getLogManager()
         .apply { readConfiguration(FileInputStream("src/main/resources/logging.xml")) }
