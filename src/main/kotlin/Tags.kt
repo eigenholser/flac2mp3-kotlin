@@ -102,10 +102,10 @@ object Tag {
             }
     }
 
-    private fun Tag.deleteAlbumArtField() {
+    private fun Tag.deleteAlbumArtField(mp3File: String) {
         runCatching { deleteArtworkField() }
-            .onSuccess { logger.info("Deleted existing ID3v24 artwork.") }
-            .onFailure { logger.info("Album art tag not present.") }
+            .onSuccess { logger.info("Deleted existing ID3v24 artwork on track: $mp3File") }
+            .onFailure { logger.info("Album art tag not present on track: $mp3File") }
     }
 
     fun updateAlbumArtField(mp3File: String, mp3Album: String) {
@@ -114,7 +114,7 @@ object Tag {
                 tag
                     ?.also {
                         if (albumArtTagExists()) {
-                            tag.deleteAlbumArtField()
+                            tag.deleteAlbumArtField(mp3File)
                         }
                         tag.addAlbumArtField(mp3Album)
                         commit()
