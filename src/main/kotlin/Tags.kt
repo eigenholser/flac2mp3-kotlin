@@ -13,7 +13,6 @@ import java.io.IOException
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.util.logging.Logger
-import kotlin.text.ifEmpty
 
 data class AudioTags(
     val artist: String,

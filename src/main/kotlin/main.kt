@@ -5,8 +5,6 @@ import com.eigenholser.flac2mp3.Tag.readAudioFile
 import com.eigenholser.flac2mp3.rules.*
 import com.eigenholser.flac2mp3.states.AlbumState.albumStateMachine
 import com.eigenholser.flac2mp3.states.AlbumState.state
-import com.eigenholser.flac2mp3.states.AlbumStates
-import com.eigenholser.flac2mp3.states.ExistingAlbumEvent
 import org.jeasy.rules.api.Fact
 import org.jeasy.rules.api.Facts
 import org.jeasy.rules.api.Rules
@@ -18,13 +16,11 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.attribute.FileTime
-import java.util.logging.Logger
 import java.util.logging.LogManager
+import java.util.logging.Logger
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.exists
 
-val logManager = LogManager.getLogManager()
-    .apply { readConfiguration(FileInputStream("src/main/resources/logging.xml")) }
 val logger: Logger = Logger.getLogger("main")
 
 @ExperimentalPathApi
@@ -32,6 +28,8 @@ fun main(args: Array<String>) {
     /* Leaving the DB stuff for now. May return to it later. */
     // val db = DbSettings.db
     // FlacDatabase.createDatabase()
+    LogManager.getLogManager()
+        .apply { readConfiguration(FileInputStream("src/main/resources/logging.xml")) }
     logger.info("Scanning FLAC sources")
 
     val rulesEngine = DefaultRulesEngine()
@@ -53,9 +51,7 @@ fun main(args: Array<String>) {
                 }
                 .also { rulesEngine.fire(Rules(NewAlbum(albumStateMachine)), it) }
 
-//            if (AlbumStates.valueOf(albumStateMachine.currentState.name) == AlbumStates.EXISTING_ALBUM) {
-                track.fireAlbumArtRules()
-//            }
+            track.fireAlbumArtRules()
         }
 
     // Delete the previous album art
