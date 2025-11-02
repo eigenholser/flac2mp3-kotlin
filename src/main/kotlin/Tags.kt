@@ -104,7 +104,7 @@ object Tag {
 
     private fun Tag.deleteAlbumArtField() {
         runCatching { deleteArtworkField() }
-            .onSuccess { logger.info("Deleted existing artwork.") }
+            .onSuccess { logger.info("Deleted existing ID3v24 artwork.") }
             .onFailure { logger.info("Album art tag not present.") }
     }
 
