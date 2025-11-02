@@ -42,23 +42,25 @@ object Tag {
         assert(flacAudioFile.tag is FlacTag)
         readAudioFile(mp3File)
             ?.also { it.tag = ID3v24Tag() }
-            ?.let {
+            ?.apply {
                 val flacTags = flacAudioFile.toAudioTags()
-                it.apply {
-                    tag.addAlbumArtField(mp3AlbumPath)
-                    tag.setField(FieldKey.ARTIST, flacTags.artist)
-                    tag.setField(FieldKey.ALBUM, flacTags.album)
-                    tag.setField(FieldKey.TITLE, flacTags.title)
-                    tag.setField(FieldKey.YEAR, flacTags.year)
-                    tag.setField(FieldKey.GENRE, flacTags.genre)
-                    tag.setField(FieldKey.TRACK, flacTags.track)
-                    tag.setField(FieldKey.CATALOG_NO, flacTags.cddb)
-                }
+                tag.addAlbumArtField(mp3AlbumPath)
+
+                listOf(
+                    FieldKey.ARTIST to flacTags.artist,
+                    FieldKey.ALBUM to flacTags.album,
+                    FieldKey.TITLE to flacTags.title,
+                    FieldKey.YEAR to flacTags.year,
+                    FieldKey.GENRE to flacTags.genre,
+                    FieldKey.TRACK to flacTags.track,
+                    FieldKey.CATALOG_NO to flacTags.cddb,
+                )
+                    .forEach { (k, v) -> tag.setField(k, v) }
             }
             ?.apply {
                 runCatching { commit() }
-                    .onSuccess { logger.info("Committed tags: $mp3File") }
-                    .onFailure { e -> logger.warning("Unable to commit tags. Caused by: {$e.message}") }
+                    .onSuccess { logger.info("Committed ID3v24 tags: $mp3File") }
+                    .onFailure { e -> logger.warning("Unable to commit ID3v24 tags. Caused by: {$e.message}") }
             }
             ?: logger.warning("Something went wrong: AudioFile is null.")
     }
