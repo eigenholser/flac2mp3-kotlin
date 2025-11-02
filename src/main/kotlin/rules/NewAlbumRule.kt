@@ -15,8 +15,10 @@ import org.jeasy.rules.api.Rule
 import org.jeasy.states.api.FiniteStateMachine
 import java.nio.file.Paths
 
-class NewAlbumRule(private val albumStateMachine: FiniteStateMachine): Rule {
+class NewAlbumRule(private val albumStateMachine: FiniteStateMachine) : Rule {
     override fun getName() = AlbumRule.NEW_ALBUM.name
+
+    override fun getPriority() = 1
 
     override fun getDescription() = "Determines whether current track represents a transition to a new album."
 
