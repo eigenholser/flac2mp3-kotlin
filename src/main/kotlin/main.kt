@@ -20,7 +20,17 @@ import java.util.logging.LogManager
 import java.util.logging.Logger
 import kotlin.io.path.exists
 
-val logger: Logger = Logger.getLogger("main")
+data class TrackData(
+    val flacFile: String,
+    val flacAlbum: String,
+    val currentAlbum: String,
+    val mp3Album: String,
+    val mp3File: String,
+    val fsize: Long,
+    val mtime: Long
+)
+
+val logger: Logger = Logger.getLogger("MainKt")
 
 fun main(args: Array<String>) {
     LogManager.getLogManager()
@@ -127,13 +137,3 @@ fun deleteMp3CoverArt(mp3AlbumPathAbsolute: String) =
         File("${mp3AlbumPathAbsolute}/${Config.thumbArtFile}").delete(),
     )
         .any { !it }
-
-data class TrackData(
-    val flacFile: String,
-    val flacAlbum: String,
-    val currentAlbum: String,
-    val mp3Album: String,
-    val mp3File: String,
-    val fsize: Long,
-    val mtime: Long
-)

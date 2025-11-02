@@ -16,7 +16,7 @@ data class AlbumArtScale(
 )
 
 object ImageScaler {
-    val logger: Logger = Logger.getLogger("ImageScaler")
+    private val logger = Logger.getLogger("ImageScaler")
     private const val FORMAT = "jpg"
 
     private fun resize(ip: ImageProcessor, resolution: Int) =
@@ -25,8 +25,8 @@ object ImageScaler {
 
     fun scale(src: String, dest: String, destType: DestType) =
         runCatching { IJ.openImage("$src/${Config.albumArtFile}") }
-            .onSuccess { logger.info("Converted album art type $destType") }
-            .onFailure { logger.warning("Album art not found: $src/${Config.albumArtFile}") }
+            .onSuccess { logger.info("Converted album art $destType:$dest") }
+            .onFailure { logger.warning("Error opening album art: $src/${Config.albumArtFile}. Caused by: ${it.message}") }
             .mapCatching { imagePlus ->
                 when (destType) {
                     DestType.THUMB ->

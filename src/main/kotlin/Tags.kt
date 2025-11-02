@@ -25,7 +25,7 @@ data class AudioTags(
 )
 
 object Tag {
-    private val logger: Logger = Logger.getLogger("Tag")
+    private val logger = Logger.getLogger("Tag")
     private val md = MessageDigest.getInstance("MD5")
 
     fun md5sum(input: String) =
@@ -102,23 +102,27 @@ object Tag {
             }
     }
 
-    private fun Tag.deleteAlbumArtField(mp3File: String) {
+    private fun Tag.deleteAlbumArtField(mp3File: String) =
         runCatching { deleteArtworkField() }
             .onSuccess { logger.info("Deleted existing ID3v24 artwork on track: $mp3File") }
-            .onFailure { logger.info("Album art tag not present on track: $mp3File") }
-    }
+            .onFailure { logger.info("ID3v24 artwork tag not present on track: $mp3File") }
+            .map { true }
+            .getOrElse { false }
+
+    fun Tag.ifArtworkExists(action: () -> Tag) =
+        if (firstArtwork != null) {
+            action()
+        } else {
+            this
+        }
 
     fun updateAlbumArtField(mp3File: String, mp3Album: String) {
         readAudioFile(mp3File)
             ?.apply {
                 tag
-                    ?.also {
-                        if (albumArtTagExists()) {
-                            tag.deleteAlbumArtField(mp3File)
-                        }
-                        tag.addAlbumArtField(mp3Album)
-                        commit()
-                    }
+                    ?.ifArtworkExists { tag.apply { deleteAlbumArtField(mp3File) } }
+                    ?.apply { tag.addAlbumArtField(mp3Album) }
+                    ?.apply { commit() }
             }
     }
 }

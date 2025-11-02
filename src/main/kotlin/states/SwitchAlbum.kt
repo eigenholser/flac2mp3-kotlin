@@ -10,7 +10,7 @@ class SwitchAlbum : EventHandler<AbstractEvent> {
     }
 
     companion object {
-        private val logger: Logger = Logger.getLogger("SwitchAlbum")
+        private val logger = Logger.getLogger("SwitchAlbum")
     }
 }
 

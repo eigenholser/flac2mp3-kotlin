@@ -33,9 +33,9 @@ class NewAlbumRule(private val albumStateMachine: FiniteStateMachine) : Rule {
                     .any { !it }
                     .also { isError ->
                         if (isError) {
-                            logger.warning("Error performing art scaling.")
+                            logger.warning("Error performing art scaling on album: $currentAlbum")
                         } else {
-                            logger.info("Completed art scaling.")
+                            logger.info("Completed art scaling on album: $currentAlbum")
                         }
                     }
 
@@ -62,6 +62,6 @@ class NewAlbumRule(private val albumStateMachine: FiniteStateMachine) : Rule {
     }
 
     companion object {
-        private val logger: Logger = Logger.getLogger("NewAlbumRule")
+        private val logger = Logger.getLogger("NewAlbumRule")
     }
 }
