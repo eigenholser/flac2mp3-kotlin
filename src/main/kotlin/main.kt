@@ -46,7 +46,7 @@ fun main(args: Array<String>) {
                     add(Fact(AlbumFact.NEXT_ALBUM.name, state.nextAlbum))
                     add(Fact(AlbumArtFacts.TRACK_DATA.name, track))
                 }
-                .also { rulesEngine.fire(Rules(NewAlbum(albumStateMachine)), it) }
+                .also { rulesEngine.fire(Rules(NewAlbumRule(albumStateMachine)), it) }
 
             track.fireAlbumArtRules()
         }
@@ -66,7 +66,7 @@ fun TrackData.fireAlbumArtRules() {
             }
 
     DefaultRulesEngine(parameters)
-        .fire(Rules(ArtNewMp3(), ArtUpdateIDv3()), albumArtFacts)
+        .fire(Rules(CreateMp3Rule(), UpdateAlbumArtRule()), albumArtFacts)
 }
 
 fun File.toTrackData(): TrackData {
@@ -107,7 +107,8 @@ fun TrackData.isAlbumArtUpdated() =
         val mp3Mtime = Paths.get(mp3File).mtime()
 
         readAudioFile(mp3File)
-            .run { (albumArtTagExists() && albumArtMtime > mp3Mtime) || !albumArtTagExists() }
+            ?.run { (albumArtTagExists() && albumArtMtime > mp3Mtime) || !albumArtTagExists() }
+            ?: false
     } else {
         false
     }

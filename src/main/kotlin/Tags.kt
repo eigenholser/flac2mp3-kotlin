@@ -33,16 +33,16 @@ object Tag {
             .toString(16)
             .padStart(32, '0')
 
-    fun readAudioFile(file: String): AudioFile =
+    fun readAudioFile(file: String): AudioFile? =
         runCatching { AudioFileIO.read(File(file)) }
             .onFailure { logger.info("Unable to read audio file: $file") }
-            .getOrThrow()
+            .getOrNull()
 
     fun writeMp3Tags(mp3File: String, mp3AlbumPath: String, flacAudioFile: AudioFile) {
         assert(flacAudioFile.tag is FlacTag)
         readAudioFile(mp3File)
-            .also { it.tag = ID3v24Tag() }
-            .let {
+            ?.also { it.tag = ID3v24Tag() }
+            ?.let {
                 val flacTags = flacAudioFile.toAudioTags()
                 it.apply {
                     tag.addAlbumArtField(mp3AlbumPath)
@@ -55,11 +55,12 @@ object Tag {
                     tag.setField(FieldKey.CATALOG_NO, flacTags.cddb)
                 }
             }
-            .apply {
+            ?.apply {
                 runCatching { commit() }
                     .onSuccess { logger.info("Committed tags: $mp3File") }
                     .onFailure { e -> logger.warning("Unable to commit tags. Caused by: {$e.message}") }
             }
+            ?: logger.warning("Something went wrong: AudioFile is null.")
     }
 
     fun AudioFile.toAudioTags() =
@@ -107,7 +108,7 @@ object Tag {
 
     fun updateAlbumArtField(mp3File: String, mp3Album: String) {
         readAudioFile(mp3File)
-            .apply {
+            ?.apply {
                 tag
                     ?.also {
                         if (albumArtTagExists()) {

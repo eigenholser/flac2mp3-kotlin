@@ -1,12 +1,11 @@
 package com.eigenholser.flac2mp3.rules
 
 import com.eigenholser.flac2mp3.Tag
-import com.eigenholser.flac2mp3.Tag.readAudioFile
 import com.eigenholser.flac2mp3.TrackData
 import com.eigenholser.flac2mp3.isAlbumArtUpdated
 import org.jeasy.rules.api.Facts
 
-class ArtUpdateIDv3 : AlbumArtRule() {
+class UpdateAlbumArtRule : AlbumArtRule() {
     override val rulePriority = 2
 
     override fun getName() = AlbumArtRules.MP3_TAGGED_ART_UPDATED.name
@@ -17,13 +16,6 @@ class ArtUpdateIDv3 : AlbumArtRule() {
     override fun execute(facts: Facts) {
         facts.get<TrackData>(AlbumArtFacts.TRACK_DATA.name)
             .apply {
-                Tag.writeMp3Tags(
-                    mp3File = mp3File,
-                    mp3AlbumPath = mp3Album,
-                    flacAudioFile = readAudioFile(flacFile)
-                )
-
-                // TODO: Check for MP3 exists first?
                 Tag.updateAlbumArtField(
                     mp3File,
                     mp3Album

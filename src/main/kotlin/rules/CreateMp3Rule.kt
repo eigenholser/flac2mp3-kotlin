@@ -1,10 +1,11 @@
 package com.eigenholser.flac2mp3.rules
 
 import com.eigenholser.flac2mp3.*
+import com.eigenholser.flac2mp3.Tag.readAudioFile
 import org.jeasy.rules.api.Facts
 import kotlin.io.path.ExperimentalPathApi
 
-class ArtNewMp3 : AlbumArtRule() {
+class CreateMp3Rule : AlbumArtRule() {
     override val rulePriority = 1
 
     override fun getName() = AlbumArtRules.NEW_MP3_ART_EXISTS.name
@@ -14,7 +15,17 @@ class ArtNewMp3 : AlbumArtRule() {
     @OptIn(ExperimentalPathApi::class)
     override fun execute(facts: Facts) {
         getTrackData(facts)
-            .apply { LameFlac2Mp3.flac2mp3(flacSrc = flacFile, mp3Dest = mp3File) }
+            .apply {
+                LameFlac2Mp3.flac2mp3(flacSrc = flacFile, mp3Dest = mp3File)
+
+                Tag.writeMp3Tags(
+                    mp3File = mp3File,
+                    mp3AlbumPath = mp3Album,
+                    flacAudioFile =
+                        readAudioFile(flacFile)
+                            ?: throw IllegalStateException("FLAC AudioFile is null. This should never ever occur.")
+                )
+            }
     }
 
     @OptIn(ExperimentalPathApi::class)

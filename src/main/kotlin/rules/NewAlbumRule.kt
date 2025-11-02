@@ -15,7 +15,7 @@ import org.jeasy.rules.api.Rule
 import org.jeasy.states.api.FiniteStateMachine
 import java.nio.file.Paths
 
-class NewAlbum(private val albumStateMachine: FiniteStateMachine): Rule {
+class NewAlbumRule(private val albumStateMachine: FiniteStateMachine): Rule {
     override fun getName() = AlbumRule.NEW_ALBUM.name
 
     override fun getDescription() = "Determines whether current track represents a transition to a new album."
@@ -35,8 +35,6 @@ class NewAlbum(private val albumStateMachine: FiniteStateMachine): Rule {
                 state.prevMp3AlbumPath = mp3Album
                 Paths.get(mp3Album).createDirectories()
 
-//                fireAlbumArtRules()
-//                    .also { AlbumState.albumStateMachine.fire(ExistingAlbumEvent()) }
                 AlbumState.albumStateMachine.fire(ExistingAlbumEvent())
             }
 
