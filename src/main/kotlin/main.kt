@@ -25,9 +25,6 @@ val logger: Logger = Logger.getLogger("main")
 
 @ExperimentalPathApi
 fun main(args: Array<String>) {
-    /* Leaving the DB stuff for now. May return to it later. */
-    // val db = DbSettings.db
-    // FlacDatabase.createDatabase()
     LogManager.getLogManager()
         .apply { readConfiguration(FileInputStream("src/main/resources/logging.xml")) }
     logger.info("Scanning FLAC sources")
