@@ -122,7 +122,11 @@ fun Path.createDirectories(): Path =
         .getOrThrow()
 
 fun deleteMp3CoverArt(mp3AlbumPathAbsolute: String) =
-    File("${mp3AlbumPathAbsolute}/${Config.coverArtFile}").delete()
+    listOf(
+        File("${mp3AlbumPathAbsolute}/${Config.coverArtFile}").delete(),
+        File("${mp3AlbumPathAbsolute}/${Config.thumbArtFile}").delete(),
+    )
+        .any { !it }
 
 data class TrackData(
     val flacFile: String,

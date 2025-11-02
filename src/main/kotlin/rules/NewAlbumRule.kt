@@ -14,6 +14,7 @@ import org.jeasy.rules.api.Facts
 import org.jeasy.rules.api.Rule
 import org.jeasy.states.api.FiniteStateMachine
 import java.nio.file.Paths
+import java.util.logging.Logger
 
 class NewAlbumRule(private val albumStateMachine: FiniteStateMachine) : Rule {
     override fun getName() = AlbumRule.NEW_ALBUM.name
@@ -25,11 +26,18 @@ class NewAlbumRule(private val albumStateMachine: FiniteStateMachine) : Rule {
     override fun execute(facts: Facts) {
         facts.get<TrackData>(AlbumArtFacts.TRACK_DATA.name)
             .apply {
-                ImageScaler.scaleImage(
-                    flacAlbum,
-                    mp3Album,
-                    DestType.COVER
+                listOf(
+                    ImageScaler.scale(flacAlbum, mp3Album, DestType.COVER),
+                    ImageScaler.scale(flacAlbum, mp3Album, DestType.THUMB)
                 )
+                    .any { !it }
+                    .also { isError ->
+                        if (isError) {
+                            logger.warning("Error performing art scaling.")
+                        } else {
+                            logger.info("Completed art scaling.")
+                        }
+                    }
 
                 deleteMp3CoverArt(state.prevMp3AlbumPath)
 
@@ -51,5 +59,9 @@ class NewAlbumRule(private val albumStateMachine: FiniteStateMachine) : Rule {
         val nextAlbum = facts.get<String>(AlbumFact.NEXT_ALBUM.name)
 
         return AlbumStates.valueOf(albumState.currentState.name) == AlbumStates.EXISTING_ALBUM && currentAlbum != nextAlbum
+    }
+
+    companion object {
+        private val logger: Logger = Logger.getLogger("NewAlbumRule")
     }
 }

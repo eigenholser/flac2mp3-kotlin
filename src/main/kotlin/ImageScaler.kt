@@ -1,6 +1,7 @@
 package com.eigenholser.flac2mp3
 
 import ij.IJ
+import ij.ImagePlus
 import ij.process.ImageProcessor
 import java.util.logging.Logger
 import kotlin.math.nextUp
@@ -9,57 +10,42 @@ enum class DestType {
     COVER, THUMB
 }
 
+data class AlbumArtScale(
+    val imagePlus: ImagePlus,
+    val filename: String,
+)
+
 object ImageScaler {
     val logger: Logger = Logger.getLogger("ImageScaler")
-    val coverFilename = Config.coverArtFile
-//    val thumbFilename = Config.thumbArtFile
-    val destFormat = "jpg"
+    private const val FORMAT = "jpg"
 
-    private fun computeScaleFactor(xAxis: Int, srcSize: Int) = xAxis / srcSize.toDouble()
+    private fun resize(ip: ImageProcessor, resolution: Int) =
+        (resolution / ip.width.toDouble())
+            .let { ip.resize(resolution, ((it * ip.height).nextUp().toInt())) }
 
-    private fun makeThumb(ip: ImageProcessor): ImageProcessor {
-        val scaleFactor = computeScaleFactor(Config.thumbnailResolution, ip.width)
-        return ip.resize(Config.thumbnailResolution, (scaleFactor*ip.height).nextUp().toInt())
-    }
-
-    private fun makeCover(ip: ImageProcessor): ImageProcessor {
-        val scaleFactor = computeScaleFactor(Config.coverResolution, ip.width)
-        return ip.resize(Config.coverResolution, ((scaleFactor * ip.height).nextUp().toInt()))
-    }
-
-//    fun scaleImage(src: String, dest: String) {
-//        runCatching {
-//            val imp = IJ.openImage("$src/${Config.albumArtFile}")
-//            val ip = imp.processor
-//
-//            // Disable thumbnail for now. Maybe remove it entirely.
-////            imp.processor = makeThumb(ip)
-////            IJ.saveAs(imp, destFormat, "$dest/$thumbFilename")
-//
-//            imp.processor = makeCover(ip)
-//            IJ.saveAs(imp, destFormat, "$dest/$coverFilename")
-//        }
-//            .onFailure { logger.warning("Album art not found: $src/${Config.albumArtFile}") }
-//
-//    }
-
-    fun scaleImage(src: String, dest: String, destType: DestType) {
-        runCatching {
-            val imp = IJ.openImage("$src/${Config.albumArtFile}")
-            val ip = imp.processor
-
-            if (destType == DestType.THUMB) {
-                imp.processor = makeThumb(ip)
-                IJ.saveAs(imp, destFormat, "$dest/$coverFilename")
-            } else {
-                imp.processor = makeCover(ip)
-                IJ.saveAs(imp, destFormat, "$dest/$coverFilename")
-            }
-                .also { imp.close() }
-        }
-            .onSuccess {
-                logger.info("Converted album art type $destType")
-            }
+    fun scale(src: String, dest: String, destType: DestType) =
+        runCatching { IJ.openImage("$src/${Config.albumArtFile}") }
+            .onSuccess { logger.info("Converted album art type $destType") }
             .onFailure { logger.warning("Album art not found: $src/${Config.albumArtFile}") }
-    }
+            .mapCatching { imagePlus ->
+                when (destType) {
+                    DestType.THUMB ->
+                        AlbumArtScale(
+                            imagePlus = imagePlus.apply { processor = resize(imagePlus.processor, Config.thumbnailResolution) },
+                            filename = dest + "/" + Config.thumbArtFile,
+                        )
+
+                    DestType.COVER ->
+                        AlbumArtScale(
+                            imagePlus = imagePlus.apply { processor = resize(imagePlus.processor, Config.thumbnailResolution) },
+                            filename = dest + "/" + Config.coverArtFile,
+                        )
+                }
+                    .apply { IJ.saveAs(imagePlus, FORMAT, filename) }
+                    .apply { imagePlus.close() }
+            }
+            .onSuccess { logger.info("Scaled image: $src/${Config.albumArtFile} --> ${it.filename}, resolution: ${it.imagePlus.width}") }
+            .onFailure { logger.severe("Failed to scale image: Caused by: ${it.message}") }
+            .map { true }
+            .getOrElse { false }
 }
