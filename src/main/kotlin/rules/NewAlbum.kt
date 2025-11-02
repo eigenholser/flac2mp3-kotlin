@@ -5,7 +5,6 @@ import com.eigenholser.flac2mp3.ImageScaler
 import com.eigenholser.flac2mp3.TrackData
 import com.eigenholser.flac2mp3.createDirectories
 import com.eigenholser.flac2mp3.deleteMp3CoverArt
-import com.eigenholser.flac2mp3.fireAlbumArtRules
 import com.eigenholser.flac2mp3.states.AlbumState
 import com.eigenholser.flac2mp3.states.AlbumState.state
 import com.eigenholser.flac2mp3.states.AlbumStates
