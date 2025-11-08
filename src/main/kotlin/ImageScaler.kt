@@ -25,8 +25,8 @@ object ImageScaler {
 
     fun scale(src: String, dest: String, destType: DestType) =
         runCatching { IJ.openImage("$src/${Config.albumArtFile}") }
-            .onSuccess { logger.info("Converted album art $destType:$dest") }
-            .onFailure { logger.warning("Error opening album art: $src/${Config.albumArtFile}. Caused by: ${it.message}") }
+            .onSuccess { logger.info("Converted album art $destType:$dest".toInfo()) }
+            .onFailure { logger.warning("Error opening album art: $src/${Config.albumArtFile}. Caused by: ${it.message}".toError()) }
             .mapCatching { imagePlus ->
                 when (destType) {
                     DestType.THUMB ->
@@ -44,8 +44,8 @@ object ImageScaler {
                     .apply { IJ.saveAs(imagePlus, FORMAT, filename) }
                     .apply { imagePlus.close() }
             }
-            .onSuccess { logger.info("Scaled image: $src/${Config.albumArtFile} --> ${it.filename}, resolution: ${it.imagePlus.width}") }
-            .onFailure { logger.severe("Failed to scale image: Caused by: ${it.message}") }
+            .onSuccess { logger.info("Scaled image: $src/${Config.albumArtFile} --> ${it.filename}, resolution: ${it.imagePlus.width}".toInfo()) }
+            .onFailure { logger.severe("Failed to scale image: Caused by: ${it.message}".toError()) }
             .map { true }
             .getOrElse { false }
 }

@@ -35,7 +35,7 @@ object Tag {
 
     fun readAudioFile(file: String): AudioFile? =
         runCatching { AudioFileIO.read(File(file)) }
-            .onFailure { logger.info("Unable to read audio file: $file") }
+            .onFailure { logger.info("Unable to read audio file: $file".toInfo()) }
             .getOrNull()
 
     fun writeMp3Tags(mp3File: String, mp3AlbumPath: String, flacAudioFile: AudioFile) {
@@ -59,10 +59,10 @@ object Tag {
             }
             ?.apply {
                 runCatching { commit() }
-                    .onSuccess { logger.info("Committed ID3v24 tags: $mp3File") }
-                    .onFailure { e -> logger.warning("Unable to commit ID3v24 tags. Caused by: {$e.message}") }
+                    .onSuccess { logger.info("Committed ID3v24 tags: $mp3File".toInfo()) }
+                    .onFailure { e -> logger.warning("Unable to commit ID3v24 tags. Caused by: {$e.message}".toInfo()) }
             }
-            ?: logger.warning("Something went wrong: AudioFile is null.")
+            ?: logger.warning("Something went wrong: AudioFile is null.".toError())
     }
 
     fun AudioFile.toAudioTags() =
@@ -90,22 +90,22 @@ object Tag {
                 .also { it.description = "Cover Art" }
                 .also { addField(it) }
         }
-            .onSuccess { logger.info("Added album art to track: $mp3AlbumPath/${Config.coverArtFile}") }
+            .onSuccess { logger.info("Added album art to track: $mp3AlbumPath/${Config.coverArtFile}".toInfo()) }
             .onFailure {
                 when (it) {
                     is FieldDataInvalidException ->
-                        logger.warning("Unable to tag file with album art: $mp3AlbumPath/${Config.coverArtFile}")
+                        logger.warning("Unable to tag file with album art: $mp3AlbumPath/${Config.coverArtFile}".toInfo())
 
                     is IOException ->
-                        logger.warning("Unable to find album art: $mp3AlbumPath/${Config.coverArtFile}")
+                        logger.warning("Unable to find album art: $mp3AlbumPath/${Config.coverArtFile}".toError())
                 }
             }
     }
 
     private fun Tag.deleteAlbumArtField(mp3File: String) =
         runCatching { deleteArtworkField() }
-            .onSuccess { logger.info("Deleted existing ID3v24 artwork on track: $mp3File") }
-            .onFailure { logger.info("ID3v24 artwork tag not present on track: $mp3File") }
+            .onSuccess { logger.info("Deleted existing ID3v24 artwork on track: $mp3File".toInfo()) }
+            .onFailure { logger.info("ID3v24 artwork tag not present on track: $mp3File".toInfo()) }
             .map { true }
             .getOrElse { false }
 

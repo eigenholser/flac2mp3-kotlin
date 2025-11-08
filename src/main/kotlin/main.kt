@@ -30,12 +30,14 @@ data class TrackData(
     val mtime: Long
 )
 
-val logger: Logger = Logger.getLogger("MainKt")
-
 fun main(args: Array<String>) {
     LogManager.getLogManager()
-        .apply { readConfiguration(FileInputStream("src/main/resources/logging.xml")) }
-    logger.info("Scanning FLAC sources")
+        .apply {
+            readConfiguration(FileInputStream("src/main/resources/logging.properties"))
+//            getLogger("org.jaudiotagger.tag.id3.ID3v23Tag").level = Level.OFF
+        }
+    val logger = Logger.getLogger("com.eigenholser.flac2mp3.MainKt")
+    logger.info("Scanning FLAC sources".toInfo())
 
     val rulesEngine = DefaultRulesEngine()
 
@@ -45,7 +47,7 @@ fun main(args: Array<String>) {
         .map { it.toTrackData() }
         .filter { it.isStale() }
         .forEach { track ->
-            logger.info("Processing track: $track")
+            logger.info("Processing track: $track".toInfo())
 
             Facts()
                 .apply {
@@ -126,14 +128,13 @@ fun TrackData.isStale() = !isCurrent() || isAlbumArtUpdated()
 fun Path.mtime() =
     (Files.getAttribute(this, "lastModifiedTime") as FileTime).toMillis()
 
-fun Path.createDirectories(): Path =
-    runCatching { Files.createDirectories(this) }
-        .onFailure { logger.info("Unable to create directories: $this") }
-        .getOrThrow()
-
 fun deleteMp3CoverArt(mp3AlbumPathAbsolute: String) =
     listOf(
         File("${mp3AlbumPathAbsolute}/${Config.coverArtFile}").delete(),
         File("${mp3AlbumPathAbsolute}/${Config.thumbArtFile}").delete(),
     )
         .any { !it }
+
+fun String.toInfo() = "\u001B[34m" + this + "\u001B[0m"
+fun String.toDebug() = "\u001B[34m" + this + "\u001B[0m"
+fun String.toError() = "\u001B[31m" + this + "\u001B[0m"
