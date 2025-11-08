@@ -60,9 +60,9 @@ object Tag {
             ?.apply {
                 runCatching { commit() }
                     .onSuccess { logger.info("Committed ID3v24 tags: $mp3File".toInfo()) }
-                    .onFailure { e -> logger.warning("Unable to commit ID3v24 tags. Caused by: {$e.message}".toInfo()) }
+                    .onFailure { e -> logger.warning("Unable to commit ID3v24 tags. Caused by: {$e.message}".toWarn()) }
             }
-            ?: logger.warning("Something went wrong: AudioFile is null.".toError())
+            ?: logger.warning("Something went wrong: AudioFile is null.".toWarn())
     }
 
     fun AudioFile.toAudioTags() =
@@ -94,10 +94,10 @@ object Tag {
             .onFailure {
                 when (it) {
                     is FieldDataInvalidException ->
-                        logger.warning("Unable to tag file with album art: $mp3AlbumPath/${Config.coverArtFile}".toInfo())
+                        logger.warning("Unable to tag file with album art: $mp3AlbumPath/${Config.coverArtFile}".toWarn())
 
                     is IOException ->
-                        logger.warning("Unable to find album art: $mp3AlbumPath/${Config.coverArtFile}".toError())
+                        logger.warning("Unable to find album art: $mp3AlbumPath/${Config.coverArtFile}".toWarn())
                 }
             }
     }
@@ -105,7 +105,7 @@ object Tag {
     private fun Tag.deleteAlbumArtField(mp3File: String) =
         runCatching { deleteArtworkField() }
             .onSuccess { logger.info("Deleted existing ID3v24 artwork on track: $mp3File".toInfo()) }
-            .onFailure { logger.info("ID3v24 artwork tag not present on track: $mp3File".toInfo()) }
+            .onFailure { logger.severe("ID3v24 artwork tag not present on track: $mp3File".toError()) }
             .map { true }
             .getOrElse { false }
 

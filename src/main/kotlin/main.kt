@@ -135,6 +135,8 @@ fun deleteMp3CoverArt(mp3AlbumPathAbsolute: String) =
     )
         .any { !it }
 
-fun String.toInfo() = "\u001B[34m" + this + "\u001B[0m"
+fun String.toInfo() = "\u001B[32m" + this + "\u001B[0m"
 fun String.toDebug() = "\u001B[34m" + this + "\u001B[0m"
 fun String.toError() = "\u001B[31m" + this + "\u001B[0m"
+fun String.toWarn() = "\u001B[33m" + this + "\u001B[0m"
+

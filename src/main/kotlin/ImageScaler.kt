@@ -26,7 +26,7 @@ object ImageScaler {
     fun scale(src: String, dest: String, destType: DestType) =
         runCatching { IJ.openImage("$src/${Config.albumArtFile}") }
             .onSuccess { logger.info("Converted album art $destType:$dest".toInfo()) }
-            .onFailure { logger.warning("Error opening album art: $src/${Config.albumArtFile}. Caused by: ${it.message}".toError()) }
+            .onFailure { logger.severe("Error opening album art: $src/${Config.albumArtFile}. Caused by: ${it.message}".toError()) }
             .mapCatching { imagePlus ->
                 when (destType) {
                     DestType.THUMB ->
