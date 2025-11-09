@@ -14,7 +14,7 @@ enum class AlbumStates {
     EXISTING_ALBUM
 }
 
-data class ConversionState(var nextAlbum: String = "", var prevMp3AlbumPath: String = "")
+data class ConversionState(var currentAlbum: String = "", var previousAlbum: String = "")
 class NewAlbumEvent : AbstractEvent(AlbumEvent.NEW_ALBUM_EVENT.name)
 class ExistingAlbumEvent : AbstractEvent(AlbumEvent.EXISTING_ALBUM_EVENT.name)
 

@@ -6,13 +6,15 @@ import org.jeasy.rules.api.Facts
 import org.jeasy.rules.api.Rule
 import org.jeasy.states.api.FiniteStateMachine
 
-abstract class AlbumArtRule : Rule {
+abstract class TrackRule : Rule {
     abstract val rulePriority: Int
 
-    fun getAlbumState(facts: Facts) =
-        AlbumStates.valueOf(facts.get<FiniteStateMachine>(AlbumArtFacts.ALBUM_STATE.name).currentState.name)
+    fun Facts.albumStateMachine(): FiniteStateMachine = get(AlbumArtFacts.ALBUM_STATE.name)
 
-    fun getTrackData(facts: Facts): TrackData = facts.get(AlbumArtFacts.TRACK_DATA.name)
+    fun Facts.albumState() =
+        AlbumStates.valueOf(albumStateMachine().currentState.name)
+
+    fun Facts.trackData(): TrackData = get(AlbumArtFacts.TRACK_DATA.name)
 
     override fun getPriority() = rulePriority
 
@@ -20,6 +22,6 @@ abstract class AlbumArtRule : Rule {
         when {
             priority > other.priority -> 1
             priority < other.priority -> -1
-            else -> name.compareTo(other.name)
+            else -> 0
         }
 }

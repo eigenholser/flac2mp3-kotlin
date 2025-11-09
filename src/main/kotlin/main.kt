@@ -1,10 +1,11 @@
 package com.eigenholser.flac2mp3
 
-import com.eigenholser.flac2mp3.Tag.albumArtTagExists
+import com.eigenholser.flac2mp3.Tag.artworkExists
 import com.eigenholser.flac2mp3.Tag.readAudioFile
 import com.eigenholser.flac2mp3.rules.*
 import com.eigenholser.flac2mp3.states.AlbumState.albumStateMachine
 import com.eigenholser.flac2mp3.states.AlbumState.state
+import com.eigenholser.flac2mp3.states.NewAlbumEvent
 import org.jeasy.rules.api.Fact
 import org.jeasy.rules.api.Facts
 import org.jeasy.rules.api.Rules
@@ -34,12 +35,10 @@ fun main(args: Array<String>) {
     LogManager.getLogManager()
         .apply {
             readConfiguration(FileInputStream("src/main/resources/logging.properties"))
-//            getLogger("org.jaudiotagger.tag.id3.ID3v23Tag").level = Level.OFF
         }
     val logger = Logger.getLogger("com.eigenholser.flac2mp3.MainKt")
     logger.info("Scanning FLAC sources".toInfo())
-
-    val rulesEngine = DefaultRulesEngine()
+    albumStateMachine.fire(NewAlbumEvent())
 
     File(Config.flacRoot)
         .walk()
@@ -48,26 +47,15 @@ fun main(args: Array<String>) {
         .filter { it.isStale() }
         .forEach { track ->
             logger.info("Processing track: $track".toInfo())
-
-            Facts()
-                .apply {
-                    add(Fact(AlbumFact.ALBUM_STATE.name, albumStateMachine))
-                    add(Fact(AlbumFact.CURRENT_ALBUM.name, track.currentAlbum))
-                    add(Fact(AlbumFact.NEXT_ALBUM.name, state.nextAlbum))
-                    add(Fact(AlbumArtFacts.TRACK_DATA.name, track))
-                }
-                .also { rulesEngine.fire(Rules(NewAlbumRule(albumStateMachine)), it) }
-
             track.fireAlbumArtRules()
         }
 
-    // Delete the previous album art
-    deleteMp3CoverArt(state.prevMp3AlbumPath)
+    deleteMp3CoverArt(state.previousAlbum)
 }
 
 fun TrackData.fireAlbumArtRules() {
     val parameters =
-        RulesEngineParameters().skipOnFirstAppliedRule(true)
+        RulesEngineParameters().skipOnFirstAppliedRule(false)
     val albumArtFacts =
         Facts()
             .also {
@@ -76,7 +64,10 @@ fun TrackData.fireAlbumArtRules() {
             }
 
     DefaultRulesEngine(parameters)
-        .fire(Rules(CreateMp3Rule(), UpdateAlbumArtRule()), albumArtFacts)
+        .fire(
+            Rules(NewAlbumRule(), ExistingAlbumRule(), CreateMp3Rule(), UpdateAlbumArtRule(), SyncTagsRule()),
+            albumArtFacts
+        )
 }
 
 fun File.toTrackData(): TrackData {
@@ -111,27 +102,27 @@ fun TrackData.mp3FileExists() = File(mp3File).exists()
 
 fun TrackData.albumArtPNGExists() = Paths.get(flacAlbum).resolve(Config.albumArtFile).exists()
 
-fun TrackData.isAlbumArtUpdated() =
+fun TrackData.isAlbumArtStale() =
     if (mp3FileExists() && albumArtPNGExists()) {
         val albumArtMtime = Paths.get(flacAlbum).resolve(Config.albumArtFile).mtime()
         val mp3Mtime = Paths.get(mp3File).mtime()
 
         readAudioFile(mp3File)
-            ?.run { (albumArtTagExists() && albumArtMtime > mp3Mtime) || !albumArtTagExists() }
+            ?.run { (artworkExists() && albumArtMtime > mp3Mtime) || !artworkExists() }
             ?: false
     } else {
         false
     }
 
-fun TrackData.isStale() = !isCurrent() || isAlbumArtUpdated()
+fun TrackData.isStale() = !isCurrent() || isAlbumArtStale()
 
 fun Path.mtime() =
     (Files.getAttribute(this, "lastModifiedTime") as FileTime).toMillis()
 
-fun deleteMp3CoverArt(mp3AlbumPathAbsolute: String) =
+fun deleteMp3CoverArt(mp3Album: String) =
     listOf(
-        File("${mp3AlbumPathAbsolute}/${Config.coverArtFile}").delete(),
-        File("${mp3AlbumPathAbsolute}/${Config.thumbArtFile}").delete(),
+        File("${Config.mp3Root}/${mp3Album}/${Config.coverArtFile}").delete(),
+        File("${Config.mp3Root}/${mp3Album}/${Config.thumbArtFile}").delete(),
     )
         .any { !it }
 

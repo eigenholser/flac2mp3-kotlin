@@ -1,5 +1,6 @@
 package com.eigenholser.flac2mp3
 
+import com.eigenholser.flac2mp3.ImageScaler.scale
 import org.jaudiotagger.audio.AudioFile
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldDataInvalidException
@@ -15,13 +16,13 @@ import java.security.MessageDigest
 import java.util.logging.Logger
 
 data class AudioTags(
-    val artist: String,
-    val album: String,
-    val title: String,
-    val year: String,
-    val genre: String,
-    val track: String,
-    val cddb: String
+    val artist: String = "",
+    val album: String = "",
+    val title: String = "",
+    val year: String = "",
+    val genre: String = "",
+    val track: String = "",
+    val cddb: String = ""
 )
 
 object Tag {
@@ -38,23 +39,45 @@ object Tag {
             .onFailure { logger.info("Unable to read audio file: $file".toInfo()) }
             .getOrNull()
 
-    fun writeMp3Tags(mp3File: String, mp3AlbumPath: String, flacAudioFile: AudioFile) {
+    fun writeMp3Tags(
+        mp3File: String,
+        mp3AlbumPath: String,
+        flacAudioFile: AudioFile,
+        updateAlbumArt: Boolean = true
+    ) {
         assert(flacAudioFile.tag is FlacTag)
         readAudioFile(mp3File)
-            ?.also { it.tag = ID3v24Tag() }
+            ?.also { it.apply { tag = tag ?: ID3v24Tag() } }
             ?.apply {
                 val flacTags = flacAudioFile.toAudioTags()
-                tag.addAlbumArtField(mp3AlbumPath)
 
-                listOf(
-                    FieldKey.ARTIST to flacTags.artist,
-                    FieldKey.ALBUM to flacTags.album,
-                    FieldKey.TITLE to flacTags.title,
-                    FieldKey.YEAR to flacTags.year,
-                    FieldKey.GENRE to flacTags.genre,
-                    FieldKey.TRACK to flacTags.track,
-                    FieldKey.CATALOG_NO to flacTags.cddb,
+                mapOf(
+                    DestType.COVER to File("${mp3AlbumPath}/${Config.coverArtFile}"),
+                    DestType.THUMB to File("${mp3AlbumPath}/${Config.thumbArtFile}")
                 )
+                    .map { (k, v) ->
+                        v.exists()
+                            .takeIf { !it }
+                            ?.takeIf { updateAlbumArt }
+                            ?.let { scale(flacAudioFile.file.parent, mp3AlbumPath, k) }
+                            ?: false
+                    }
+                    .all { it }
+                    .also { isScaled ->
+                        if (isScaled) {
+                            logger.info("Scaled art for album: ${flacAudioFile.file.absolutePath}".toInfo())
+                        } else {
+                            logger.info("Error or scaling disabled for album: ${flacAudioFile.file.absolutePath}".toDebug())
+                        }
+                    }
+
+                tag
+                    .takeIf { updateAlbumArt }
+                    ?.ifArtworkExists { it.apply { deleteAlbumArtField(mp3File) } }
+                    ?.addAlbumArtField(mp3AlbumPath)
+
+                flacTags
+                    .toMap()
                     .forEach { (k, v) -> tag.setField(k, v) }
             }
             ?.apply {
@@ -62,8 +85,19 @@ object Tag {
                     .onSuccess { logger.info("Committed ID3v24 tags: $mp3File".toInfo()) }
                     .onFailure { e -> logger.warning("Unable to commit ID3v24 tags. Caused by: {$e.message}".toWarn()) }
             }
-            ?: logger.warning("Something went wrong: AudioFile is null.".toWarn())
+            ?: logger.warning("Something bad happened: AudioFile is null.".toWarn())
     }
+
+    fun AudioTags.toMap() =
+        mapOf(
+            FieldKey.ARTIST to artist,
+            FieldKey.ALBUM to album,
+            FieldKey.TITLE to title,
+            FieldKey.YEAR to year,
+            FieldKey.GENRE to genre,
+            FieldKey.TRACK to track,
+            FieldKey.CATALOG_NO to cddb,
+        )
 
     fun AudioFile.toAudioTags() =
         tag.run {
@@ -81,9 +115,10 @@ object Tag {
             )
         }
 
-    fun AudioFile.albumArtTagExists() = tag?.firstArtwork != null
+    fun AudioFile.artworkExists() = tag?.firstArtwork != null
 
-    private fun Tag.addAlbumArtField(mp3AlbumPath: String) {
+    fun Tag.addAlbumArtField(mp3AlbumPath: String) {
+        assert(this is ID3v24Tag)
         runCatching {
             StandardArtwork
                 .createArtworkFromFile(File("$mp3AlbumPath/${Config.coverArtFile}"))
@@ -109,20 +144,20 @@ object Tag {
             .map { true }
             .getOrElse { false }
 
-    fun Tag.ifArtworkExists(action: () -> Tag) =
+    fun Tag.ifArtworkExists(action: (tag: Tag) -> Tag) =
         if (firstArtwork != null) {
-            action()
+            action(this)
         } else {
             this
         }
 
-    fun updateAlbumArtField(mp3File: String, mp3Album: String) {
-        readAudioFile(mp3File)
-            ?.apply {
-                tag
-                    ?.ifArtworkExists { tag.apply { deleteAlbumArtField(mp3File) } }
-                    ?.apply { tag.addAlbumArtField(mp3Album) }
-                    ?.apply { commit() }
-            }
-    }
+//    fun updateAlbumArtField(mp3File: String, mp3Album: String) {
+//        readAudioFile(mp3File)
+//            ?.apply {
+//                tag
+//                    ?.ifArtworkExists { tag.apply { deleteAlbumArtField(mp3File) } }
+//                    ?.apply { tag.addAlbumArtField(mp3Album) }
+//                    ?.apply { commit() }
+//            }
+//    }
 }
