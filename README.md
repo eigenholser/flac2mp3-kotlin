@@ -17,7 +17,8 @@ your $HOME directory:
     flacdb.filename = flac.db
     flac_root = /srv/data/music/flac
     mp3_root = /srv/data/music/mp3
-    album_art.resolution.thumb = 200
+    album_art.required = true
+    album_art.resolution.thumb = 1000
     album_art.resolution.cover = 1000
     album_art.name.full = album_art.png
     album_art.name.cover = cover.jpg

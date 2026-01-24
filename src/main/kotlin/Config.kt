@@ -11,6 +11,7 @@ class Config {
         val mp3Root = config.extract<String>("mp3_root")
         val flacRoot = config.extract<String>("flac_root")
         val flacDb = flacRoot.plus("/").plus(config.extract<String>("flacdb.filename"))
+        val albumArtRequired = config.extract<Boolean>("album_art.required")
         val albumArtFile = config.extract<String>("album_art.name.full")
         val thumbArtFile = config.extract<String>("album_art.name.thumb")
         val coverArtFile = config.extract<String>("album_art.name.cover")

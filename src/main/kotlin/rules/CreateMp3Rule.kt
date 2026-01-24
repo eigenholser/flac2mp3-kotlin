@@ -1,12 +1,17 @@
 package com.eigenholser.flac2mp3.rules
 
+import com.eigenholser.flac2mp3.Config
 import com.eigenholser.flac2mp3.LameFlac2Mp3.flac2mp3
 import com.eigenholser.flac2mp3.Tag.readAudioFile
 import com.eigenholser.flac2mp3.Tag.writeMp3Tags
 import com.eigenholser.flac2mp3.TrackData
 import com.eigenholser.flac2mp3.albumArtPNGExists
 import com.eigenholser.flac2mp3.mp3FileExists
+import com.eigenholser.flac2mp3.toError
+import com.eigenholser.flac2mp3.toInfo
+import com.eigenholser.flac2mp3.toWarn
 import org.jeasy.rules.api.Facts
+import java.util.logging.Logger
 
 class CreateMp3Rule : TrackRule() {
     override val rulePriority = 3
@@ -17,7 +22,26 @@ class CreateMp3Rule : TrackRule() {
 
     override fun evaluate(facts: Facts) =
         facts.get<TrackData>(AlbumArtFacts.TRACK_DATA.name)
-            .run { !mp3FileExists() && albumArtPNGExists() }
+            ?.run {
+                when (Config.albumArtRequired) {
+                    true -> {
+                        runCatching { albumArtPNGExists() }
+                            .onFailure { logger.severe("Error reading FLAC path: $flacFile".toError()) }
+                            .onSuccess {
+                                if (it) {
+                                    logger.info("Found album art $flacAlbum/${Config.albumArtFile}".toInfo())
+                                } else {
+                                    logger.warning("Album art not found. MP3 encoding disabled! $flacAlbum/${Config.albumArtFile}".toWarn())
+                                }
+                            }
+                            .map { !mp3FileExists() && it /* it == albumArtPNGExists() */ }
+                            .getOrDefault(false)
+                    }
+
+                    false -> !mp3FileExists()
+                }
+            }
+            ?: false
 
     override fun execute(facts: Facts) {
         facts.trackData()
@@ -32,5 +56,9 @@ class CreateMp3Rule : TrackRule() {
                             ?: throw IllegalStateException("FLAC AudioFile is null. This should never ever occur.")
                 )
             }
+    }
+
+    companion object {
+        private val logger = Logger.getLogger("CreateMp3Rule")
     }
 }
