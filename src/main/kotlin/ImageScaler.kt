@@ -46,6 +46,4 @@ object ImageScaler {
             }
             .onSuccess { logger.info("Scaled image: $src/${Config.albumArtFile} --> ${it.filename}, resolution: ${it.imagePlus.width}".toInfo()) }
             .onFailure { logger.severe("Failed to scale image: Caused by: ${it.message}".toError()) }
-            .map { true }
-            .getOrElse { false }
 }
