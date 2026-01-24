@@ -36,7 +36,7 @@ object Tag {
 
     fun readAudioFile(file: String): AudioFile? =
         runCatching { AudioFileIO.read(File(file)) }
-            .onFailure { logger.info("Unable to read audio file: $file".toInfo()) }
+            .onFailure { logger.info("Unable to read audio file: $file. Caused by: ${it.message}".toInfo()) }
             .getOrNull()
 
     fun writeMp3Tags(
@@ -59,15 +59,14 @@ object Tag {
                         v.exists()
                             .takeIf { !it }
                             ?.takeIf { updateAlbumArt }
-                            ?.let { scale(flacAudioFile.file.parent, mp3AlbumPath, k) }
-                            ?: false
+                            ?.let { k to scale(flacAudioFile.file.parent, mp3AlbumPath, k) }
+                            ?: (k to Result.success(null))
                     }
-                    .all { it }
-                    .also { isScaled ->
-                        if (isScaled) {
-                            logger.info("Scaled art for album: ${flacAudioFile.file.absolutePath}".toInfo())
+                    .forEach { (k, v) ->
+                        if (v.isSuccess) {
+                            logger.info("Scaled [$k] art for album: ${flacAudioFile.file.absolutePath}".toInfo())
                         } else {
-                            logger.info("Error or scaling disabled for album: ${flacAudioFile.file.absolutePath}".toDebug())
+                            logger.info("Error scaling [$k] art for album: ${flacAudioFile.file.absolutePath}. Caused by: ${v.exceptionOrNull()?.message}".toDebug())
                         }
                     }
 
