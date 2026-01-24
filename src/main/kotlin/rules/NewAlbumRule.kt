@@ -4,6 +4,7 @@ import com.eigenholser.flac2mp3.deleteMp3CoverArt
 import com.eigenholser.flac2mp3.states.AlbumState.state
 import com.eigenholser.flac2mp3.states.AlbumStates
 import com.eigenholser.flac2mp3.states.ExistingAlbumEvent
+import com.eigenholser.flac2mp3.toInfo
 import org.jeasy.rules.api.Facts
 import java.nio.file.Files
 import java.nio.file.Path
@@ -43,7 +44,7 @@ class NewAlbumRule() : TrackRule() {
 
         private fun Path.createDirectories(): Path =
             runCatching { Files.createDirectories(this) }
-                .onFailure { logger.info("Unable to create directories: $this") }
+                .onFailure { logger.info("Unable to create directories: $this".toInfo()) }
                 .getOrThrow()
     }
 }
